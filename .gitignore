@@ -1,0 +1,12 @@
+**/target/
+**/.bloop/
+**/test/
+.metals/
+.bsp/
+.vscode/
+.idea/
+.env
+.antlr/
+out/
+secrets/
+null/
