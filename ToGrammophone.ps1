@@ -1,5 +1,5 @@
 # Set the path to the input file
-$inputFile = "LPPGrammar.g4"
+$inputFile = "LPP.g4"
 
 # Set the path to the output file
 $outputFile = "LPPGrammar.bnf"
