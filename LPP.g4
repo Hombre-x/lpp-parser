@@ -6,7 +6,8 @@ program : initializations principal initializations EOF ;
 initializations : initialization initializations | ;
 initialization  : declaration 
                 | procedure 
-                | function ;
+                | function 
+                | register ;
 
 // Reserved words
 PROCEDURE : 'procedimiento' ;
@@ -15,8 +16,9 @@ REGISTER : 'registro' ;
 ENTONCES : 'entonces' ;
 ESCRIBA : 'escriba' ;
 RETURN : 'retorne' ;
-LEA : 'lea' ;
-CADENA: 'cadena' ;
+ARREGLO : 'arreglo' ;
+CADENA : 'cadena' ;
+LLAMAR : 'llamar' ;
 SI : 'si' ;
 SINO : 'sino' ;
 MIENTRAS : 'mientras' ;
@@ -26,43 +28,40 @@ HASTA : 'hasta' ;
 PARA : 'para' ;
 CASO : 'caso' ;
 VAR : 'var' ;
+LEA : 'lea' ;
+DE : 'de' ;
 
 // Tokens:
-ID : 'var1' | 'var2' | 'var3' 
-   | 'procedimiento1' | 'procedimiento2'
-   | 'funcion1' | 'funcion2' 
-   | 'registro1_t' | 'registro2_t' ;
+ID : /[a-zA-Z_][a-zA-Z0-9_]*/ ;
 
-NUMBER  : INTEGER | REAL ;
+
+WS : [ \t\r\n]+ -> skip ; 
+INTEGER : [0-9]+ ;
+REAL    : [0-9]+ '.' [0-9]+ ;
 STRING  : '"Hola mundo"' ;
 BOOLEAN : 'verdadero' | 'falso' ;
-
-
 
 // Operators
 TKN_ASSIGN : '<-' ;
 TKN_COMMA : ',' ;
 TKN_COLON : ':' ;
+TKN_PERIOD : '.' ;
 
-INTEGER : [0-9]+ ;
-REAL    : [0-9]+ '.' [0-9]+ ;
-WS : [ \t\r\n]+ -> skip ;
 
 // =================================
 
 // Declarations
 declarations : declaration declarations | ;
-declaration : type ids 
-            | register ;
+declaration : type ids ;
 
 // ids : id | id TKN_COMMA ids ; 
 ids   : ID ids_p ; 
 ids_p : TKN_COMMA ids | ;
 
 // Types
-type   : 'entero' | 'real' | 'booleano' | 'caracter' | cadena ;
-cadena : CADENA '[' INTEGER ']' ;
-
+type   : 'entero' | 'real' | 'booleano' | 'caracter' | string | array | register_type;
+string : CADENA  '[' INTEGER ']' ;
+array  : ARREGLO '[' INTEGER ']' DE type ;
 
 // params : param | param TKN_COMMA params ;
 params   : param params_p ;
@@ -96,10 +95,17 @@ function_p : '(' params ')' function_p2
 function_p2 : declarations statements
             | TKN_COLON type declarations function_body ;
 
-         
-
-
+      
 function_body : 'inicio' actions RETURN expr 'fin' ;
+
+
+// Registers
+registers : register registers | ;
+register : REGISTER register_type register_attributes 'fin registro' ;
+register_attributes : register_attribute register_attributes | ;
+register_attribute : type ID ;
+register_type : ID ; 
+
 
 // =================================
 
@@ -114,6 +120,7 @@ actions : action actions | ;
 // Action
 action : escriba 
        | lea 
+       | llamar
        | assignment 
        | if_statement 
        | switch_statement
@@ -125,16 +132,31 @@ action : escriba
 escriba: ESCRIBA escriba_params ; // escriba action
 
 // escriba_params : escriba_param | escriba_param TKN_COMMA escriba_params ;
-escriba_params : escriba_param escriba_params_p ;
+escriba_params   : escriba_param escriba_params_p ;
 escriba_params_p : TKN_COMMA escriba_params | ;
-escriba_param : STRING
-              | ID ;
+escriba_param : expr ;
               
 // Lea action
 lea : LEA ids ; 
 
+// Llamar action 
+llamar   : LLAMAR llamar_p ;
+llamar_p : ID procedure_call_p
+         | 'nueva_linea' ;
+
+procedure_call_p : '(' function_params ')' | ;
+
 // Assignment
-assignment : ID TKN_ASSIGN expr ;
+
+// assignment   : ID TKN_ASSIGN expr 
+//              | ID TKN_PERIOD register_attribute TKN_ASSIGN expr ;
+
+assignment   : ID assignment_p ;
+assignment_p : TKN_ASSIGN expr               // Variables 
+             | TKN_PERIOD ID TKN_ASSIGN expr // Register attributes
+             | '[' expr ']' TKN_ASSIGN expr  // Array access
+             ; 
+             
 
 
 // If statement 
@@ -155,10 +177,13 @@ switch_statement_p : 'fin caso' | SINO TKN_COLON actions 'fin caso' ;
 
 switch_values     : switch_value switch_values | ;
 switch_value      : values TKN_COLON actions ;
-// values            : VALUE | VALUE TKN_COMMA values ;
-values            : value values_p ;
-values_p          : TKN_COMMA values | ;
-value             : NUMBER | STRING | BOOLEAN ;// TODO: Breaks STRING recognition in <escriba> 
+
+values            : INTEGER values_p 
+                  | REAL values_p 
+                  | BOOLEAN values_p 
+                  | STRING values_p ;
+
+values_p          : TKN_COMMA values | ;// TODO: Breaks STRING recognition in <escriba> 
 
 // Ciclo mientras
 ciclo_mientras : MIENTRAS expr HAGA actions 'fin mientras' ;
@@ -172,11 +197,7 @@ ciclo_para : PARA ID TKN_ASSIGN expr HASTA expr HAGA actions 'fin para' ;
 
 // =================================
 
-// Registers
-register : REGISTER register_type register_attributes 'fin registro' ;
-register_attributes : register_attribute register_attributes | ;
-register_attribute : type ID ;
-register_type : ID ; 
+
 
 
 // Expressions
@@ -227,4 +248,21 @@ exponentiation_p : '^' exponentiation | ;
 unary            : unary_ops primary | primary ;
 unary_ops        : '-' | '!' ;
 
-primary          : ID | value | '(' expr ')' ; 
+primary          : INTEGER | REAL | BOOLEAN | STRING | '(' expr ')' | primary_p ; 
+
+// primary_p        : ID  // Variables and cero function calls
+//                  | ID '(' function_params ')' // Function calls with params
+//                  | ID TKN_PERIOD ID // Register attributes
+//                  | ID '[' expr ']' // Array access
+               //   ;
+primary_p        : ID primary_p2 ; 
+
+
+primary_p2       : '(' function_params ')' // Function calls with params
+                 | TKN_PERIOD ID           // Register attributes
+                 | '[' expr ']'            // Array access
+                 |                         // Variables and cero function calls
+                 ;
+
+function_params   : expr function_params_p ;
+function_params_p : TKN_COMMA function_params | ;
