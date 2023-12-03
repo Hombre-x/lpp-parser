@@ -1,18 +1,13 @@
 grammar LPP ;
 
 // Initial set of rules
-program : initializations principal initializations EOF ;
+program : initializations principal initializations EOF ; 
 
-//initializations : initialization initializations | ;
-//initialization  : declaration
-//                | procedure
-//                | function
-//                | register ;
-
-initializations : initialization1 | ;
-initialization1 : registers initialization2 ;
-initialization2 : declarations initialization3 ;
-initialization3 : procedures | functions ;
+initializations : initialization initializations | ;
+initialization  : declaration 
+                | procedure 
+                | function 
+                | register ;
 
 // Reserved words
 PROCEDURE : 'procedimiento' ;
@@ -40,13 +35,10 @@ DE : 'de' ;
 ID : /[a-zA-Z_][a-zA-Z0-9_]*/ ;
 
 
-WS      : [ \t\r\n]+ -> skip ;
-COMMENT : ( '//' ~[\r\n]*
-        | '/*' .*? '*/' ) -> skip ;
+WS : [ \t\r\n]+ -> skip ; 
 INTEGER : [0-9]+ ;
 REAL    : [0-9]+ '.' [0-9]+ ;
-STRING  : '"' ~["]* '"' ;
-CHAR    : '\'' ~['] '\'' ;
+STRING  : '"Hola mundo"' ;
 BOOLEAN : 'verdadero' | 'falso' ;
 
 // Operators
@@ -62,62 +54,57 @@ TKN_PERIOD : '.' ;
 declarations : declaration declarations | ;
 declaration : type ids ;
 
-// ids : id | id TKN_COMMA ids ;
-ids   : ID ids_p ;
+// ids : id | id TKN_COMMA ids ; 
+ids   : ID ids_p ; 
 ids_p : TKN_COMMA ids | ;
 
 // Types
 type   : 'entero' | 'real' | 'booleano' | 'caracter' | string | array | register_type;
-function_type : 'entero' | 'real' | 'booleano' | 'caracter' | string | ID ;
 string : CADENA  '[' INTEGER ']' ;
-array  : ARREGLO '[' array_dimenstion ']' DE type ;
+array  : ARREGLO '[' INTEGER ']' DE type ;
 
-array_dimenstion   : INTEGER array_dimenstion_p ;
-array_dimenstion_p : TKN_COMMA array_dimenstion | ;
 // params : param | param TKN_COMMA params ;
 params   : param params_p ;
 params_p : TKN_COMMA params | ;
-param    : type ID
+param    : type ID 
          | VAR type ID ;
 
-// Procedures
+// Procedures 
 procedures : procedure procedures | ;
 
-// procedure  : PROCEDURE ID '(' params ')' declarations principal
+// procedure  : PROCEDURE ID '(' params ')' declarations principal 
 //            | PROCEDURE ID declarations principal ;
 procedure   : PROCEDURE ID procedure_p ;
-procedure_p : '(' params ')' declarations statements
+procedure_p : '(' params ')' declarations statements 
             | declarations statements ;
 
 
 // Functions
 functions : function functions | ;
 // function  : FUNCTION ID '(' params ')' TKN_COLON type declarations function_body
-//           | FUNCTION ID TKN_COLON type declarations function_body
+//           | FUNCTION ID TKN_COLON type declarations function_body 
 //           | FUNCTION ID '(' params ')' declarations statements ;
 
 function   : FUNCTION ID function_p ;
-// function_p : '(' params ')' TKN_COLON type defunction_clarations function_body
-//            | '(' params ')' declarations statements
+// function_p : '(' params ')' TKN_COLON type declarations function_body
+//            | '(' params ')' declarations statements 
 //            | TKN_COLON type declarations function_body ;
 function_p : '(' params ')' function_p2
-           | TKN_COLON function_type declarations function_body ;
+           | TKN_COLON type declarations function_body ;  
 
-function_p2 : declarations function_body
-            | TKN_COLON function_type declarations function_body ;
+function_p2 : declarations statements
+            | TKN_COLON type declarations function_body ;
 
-
-function_body   : 'inicio' actions function_body_p ;
-function_body_p : RETURN expr 'fin'
-                | 'fin' ;
+      
+function_body : 'inicio' actions RETURN expr 'fin' ;
 
 
 // Registers
 registers : register registers | ;
-register  : REGISTER register_type register_attributes 'fin registro' ;
+register : REGISTER register_type register_attributes 'fin registro' ;
 register_attributes : register_attribute register_attributes | ;
 register_attribute : type ID ;
-register_type : ID ;
+register_type : ID ; 
 
 
 // =================================
@@ -131,42 +118,55 @@ statements : 'inicio' actions 'fin' ;
 actions : action actions | ;
 
 // Action
-action : escriba
-       | lea
+action : escriba 
+       | lea 
        | llamar
-       | assignment
-       | if_statement
+       | assignment 
+       | if_statement 
        | switch_statement
-       | ciclo_mientras
-       | ciclo_repita
+       | ciclo_mientras 
+       | ciclo_repita 
        | ciclo_para ;
 
-// Escriba action
-escriba   : ESCRIBA function_params ;
+// Escriba action   
+escriba: ESCRIBA escriba_params ; // escriba action
 
+// escriba_params : escriba_param | escriba_param TKN_COMMA escriba_params ;
+escriba_params   : escriba_param escriba_params_p ;
+escriba_params_p : TKN_COMMA escriba_params | ;
+escriba_param    : STRING
+                 | ID escriba_param_p ;
+escriba_param_p  : TKN_COLON
+                 | '[' expr ']' 
+                 |
+                 ; 
+              
 // Lea action
-lea : LEA ids ;
+lea : LEA ids ; 
 
-// Llamar action
+// Llamar action 
 llamar   : LLAMAR llamar_p ;
 llamar_p : ID procedure_call_p
          | 'nueva_linea' ;
 
-procedure_call_p  : '(' function_params ')' | ;
-
+procedure_call_p : '(' function_params ')' | ;
 
 // Assignment
 
-// assignment   : ID TKN_ASSIGN expr
+// assignment   : ID TKN_ASSIGN expr 
 //              | ID TKN_PERIOD register_attribute TKN_ASSIGN expr ;
 
-assignment   : variable_acces '<-' expr ;
+assignment   : ID assignment_p ;
+assignment_p : TKN_ASSIGN expr               // Variables 
+             | TKN_PERIOD ID TKN_ASSIGN expr // Register attributes
+             | '[' expr ']' TKN_ASSIGN expr  // Array access
+             ; 
+             
 
 
+// If statement 
 
-// If statement
-
-// if_statement : SI condition 'entonces' actions 'fin si'
+// if_statement : SI condition 'entonces' actions 'fin si' 
 //              | SI condition 'entonces' actions SINO actions 'fin si' ;
 
 if_statement   : SI expr ENTONCES actions if_statement_p ;
@@ -174,7 +174,7 @@ if_statement_p : 'fin si' | SINO actions 'fin si' ;
 
 // Switch statements
 
-// switch_statement : CASO ID switch_values 'fin caso'
+// switch_statement : CASO ID switch_values 'fin caso' 
 //                  | CASO ID switch_values SINO actions 'fin caso' ;
 
 switch_statement   : CASO ID switch_values switch_statement_p ;
@@ -183,13 +183,12 @@ switch_statement_p : 'fin caso' | SINO TKN_COLON actions 'fin caso' ;
 switch_values     : switch_value switch_values | ;
 switch_value      : values TKN_COLON actions ;
 
-values            : INTEGER values_p
-                  | REAL values_p
-                  | BOOLEAN values_p
-                  | CHAR values_p
+values            : INTEGER values_p 
+                  | REAL values_p 
+                  | BOOLEAN values_p 
                   | STRING values_p ;
 
-values_p          : TKN_COMMA values | ;// TODO: Breaks STRING recognition in <escriba>
+values_p          : TKN_COMMA values | ;// TODO: Breaks STRING recognition in <escriba> 
 
 // Ciclo mientras
 ciclo_mientras : MIENTRAS expr HAGA actions 'fin mientras' ;
@@ -197,7 +196,7 @@ ciclo_mientras : MIENTRAS expr HAGA actions 'fin mientras' ;
 // Ciclo repita
 ciclo_repita : REPITA actions HASTA expr ;
 
-// Ciclo para
+// Ciclo para 
 ciclo_para : PARA ID TKN_ASSIGN expr HASTA expr HAGA actions 'fin para' ;
 
 
@@ -252,26 +251,23 @@ exponentiation   : unary exponentiation_p ;
 exponentiation_p : '^' exponentiation | ;
 
 unary            : unary_ops primary | primary ;
-unary_ops        : '-' ;
+unary_ops        : '-' | '!' ;
 
-primary          : INTEGER | REAL | BOOLEAN | STRING | CHAR | '(' expr ')' | variable_acces ;
+primary          : INTEGER | REAL | BOOLEAN | STRING | '(' expr ')' | primary_p ; 
 
 // primary_p        : ID  // Variables and cero function calls
 //                  | ID '(' function_params ')' // Function calls with params
 //                  | ID TKN_PERIOD ID // Register attributes
 //                  | ID '[' expr ']' // Array access
-//                  ;
+               //   ;
+primary_p        : ID primary_p2 ; 
 
-array_dimension_expr   : expr array_dimension_expr_p ;
-array_dimension_expr_p : TKN_COMMA array_dimension_expr | ;
 
-variable_acces   : ID variable_acces_p ;
-variable_acces_p : '(' function_params ')'       // Function calls with params
-                 | TKN_PERIOD ID                 // Register attributes
-                 | array_acceses // Array access
-                 | ;
-array_acces : '[' array_dimension_expr ']' ;
-array_acceses : array_acces array_acceses | ;
+primary_p2       : '(' function_params ')' // Function calls with params
+                 | TKN_PERIOD ID           // Register attributes
+                 | '[' expr ']'            // Array access
+                 |                         // Variables and cero function calls
+                 ;
 
-function_params   : expr function_params_p | ;
+function_params   : expr function_params_p ;
 function_params_p : TKN_COMMA function_params | ;
