@@ -1,21 +1,18 @@
 package com.graphene
 package app
 
-import cats.effect.{IO, IOApp}
+import core.lexer.Lexer.lexer.fully
+import core.parser.Program.program
+import syntax.program.tlc
 
-import parsley.{Failure, Success}
-import core.Parser.*
+import instances.error.given
 
-object App extends IOApp.Simple:
-  
-  def run: IO[Unit] =
+object App:
+
+  def parseProgram(input: String): java.lang.String =
+    val parsingResult = fully(program.void #> "El analisis sintactico ha finalizado exitosamente.") parse input.tlc
     
-    val matching = char.parse("") match
-      case Failure(msg) => msg
+    parsingResult.fold(identity, identity).replaceAll("keyword ", "")
     
-    for
-      _   <- IO.println("Starting parsing")
-      res <- IO( matching )
-      _   <- IO.println(res)
-      
-    yield ()
+    
+
