@@ -1,11 +1,7 @@
 package com.graphene
 package domain.parser
 
-import cats.Eval
-import cats.data.{EitherT, StateT}
-import domain.evalEither.EvalEither
-
-import com.graphene.domain.token.Token
+import parsley.Parsley
 
 /**
  * Evolution of the type:
@@ -16,11 +12,11 @@ import com.graphene.domain.token.Token
  * 5.
  */
 
-type ParserError = String
-type Parser[A] = StateT[EvalEither, String, A]
-object Parser:
-  def apply[A](sf: String => EvalEither[(String, A)]): Parser[A] =
-    StateT[EvalEither, String, A](sf)
+type Parser[A] = Parsley[A]
+
+
+
+
     
   
     
